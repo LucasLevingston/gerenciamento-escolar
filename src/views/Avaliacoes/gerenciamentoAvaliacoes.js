@@ -1,53 +1,73 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import MaterialTable from "material-table";
-import Joi, { number } from 'joi';
+import Select from 'react-select';
 
-const GerenciamentoAvaliacoes = props => {
-
+const GerenciamentoAvaliacoes = () => {
   const [data, setData] = useState([]);
+  const [alunosData, setAlunosData] = useState([]);
+  const [componentesCurricularesData, setComponentesCurricularesData] = useState([]);
 
+  const baseUrl = "http://demo4138820.mockable.io"
   useEffect(() => {
-    handleClick();
+    fetchData();
   }, []);
+  const componentesCurriculares = [
+    {
+      id: 1,
+      nome: 'Matemática Aplicada',
+      sigla: 'MATAPL',
+      matrizCurricular: 'Engenharia',
+      cargaHoraria: '0400'
+    },
+  ];
+  const fetchData = async () => {
+    try {
+      const [avaliacoesResponse, alunosResponse] = await Promise.all([
+        axios.get(baseUrl + "/avaliacoes"),
+        axios.get(baseUrl + "/alunos")
+      ]);
 
-  const handleClick = () => {
-    axios
-      .get("https://demo4138820.mockable.io/avaliacoes")
-      .then(response => {
-        const dados = response.data.lista;
-        setData(dados);
-      })
-      .catch(error => console.log(error));
+      setData(avaliacoesResponse.data.lista);
+      setAlunosData(alunosResponse.data.lista);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  function handleCreate(newData) {
-    const newId = data[data.length].id
-    console.log(newId)
-    console.log(data)
-    axios
-      .post("https://demo4138820.mockable.io/avaliacao", {
-        "id": newData.id,
-        "cpf": newData.cpf,
-        "matricula": newData.matricula,
-        "nome": newData.nome,
-        "cep": newData.cep,
-        "curso": newData.curso
-      })
-      .then(function (response) {
-        console.log('Salvo com sucesso:', response.data);
-      });
-  }
+  const handleCreate = async newData => {
+    try {
+      const newId = Math.max(...data.map(aluno => aluno.id)) + 1;
+      const response = await axios.post(baseUrl + "/avaliacoes/create", { id: newId, ...newData });
+      return response
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+    }
+  };
 
-  function handleDelete(newData) {
-    axios
-      .delete("https://demo4138820.mockable.io/delete-aluno", {
-        data: { "id": newData.id }
-      })
-      .then(function (response) {
-        console.log('Deletado com sucesso.');
-      });
-  }
+  const handleUpdate = async (newData, oldData) => {
+    try {
+      setData(prevData => prevData.map(data => (data.id === oldData.id ? newData : data)));
+      // await axios.put(baseUrl+`/avaliacao/update/${oldData.id}`, newData);
+      //Apenas o acesso a rota
+      const response = await axios.put(baseUrl + `/avaliacoes/update`, newData);
+      console.log(response ? newData : null)
+      return response ? newData : null
+    } catch (error) {
+      console.error('Erro ao atualizar:', error);
+    }
+  };
+
+  const handleDelete = async oldData => {
+    try {
+      const response = await axios.delete(`http://demo4138820.mockable.io/avaliacoes/delete`);
+      setData(prevData => prevData.filter(data => data.id !== oldData.id));
+      console.log(response.data)
+      return response
+    } catch (error) {
+      console.error('Erro ao deletar:', error);
+    }
+  };
 
   const periodoAvaliacao = {
     2024.1: '2024.1',
@@ -63,63 +83,41 @@ const GerenciamentoAvaliacoes = props => {
     2019.1: '2019.1'
   };
 
-  const componentesCurriculares = [
-    {
-      id: 1,
-      nome: 'Matemática Aplicada',
-      sigla: 'MATAPL',
-      matrizCurricular: 'Engenharia',
-      cargaHoraria: '0400'
-    },
-    // Adicione mais componentes aqui...
-  ];
-
-  const validateData = (data) => {
-    const schema = Joi.object({
-      periodoAvaliacao: Joi.string().required().messages({
-        'any.required': 'Período Avaliação é obrigatório'
-      }),
-      categoriaAvaliacao: Joi.string().max(100).required().messages({
-        'any.required': 'Categoria Avaliação é obrigatório'
-      }),
-      conceitoProfessor: Joi.number().integer().min(0).max(10).required().messages({
-        'number.base': 'Conceito do Professor deve ser um número',
-        'number.min': 'Conceito do Professor deve estar entre 0 e 10',
-        'number.max': 'Conceito do Professor deve estar entre 0 e 10'
-      }),
-      conceitoRecursoDidatico: Joi.number().integer().min(0).max(10).required().messages({
-        'number.base': 'Conceito do Recurso Didático deve ser um número',
-        'number.min': 'Conceito do Recurso Didático deve estar entre 0 e 10',
-        'number.max': 'Conceito do Recurso Didático deve estar entre 0 e 10'
-      }),
-      conceitoRelevanciaDisciplina: Joi.number().integer().min(0).max(10).required().messages({
-        'number.base': 'Conceito da Relevância da Disciplina deve ser um número',
-        'number.min': 'Conceito da Relevância da Disciplina deve estar entre 0 e 10',
-        'number.max': 'Conceito da Relevância da Disciplina deve estar entre 0 e 10'
-      }),
-      componenteCurricular: Joi.object({
-        id: Joi.number().required(),
-        nome: Joi.string().max(255).required(),
-        sigla: Joi.string().max(10).required(),
-        matrizCurricular: Joi.string().max(255).required(),
-        cargaHoraria: Joi.string().max(4).required()
-      }).required().messages({
-        'any.required': 'Componente Curricular é obrigatório'
-      })
-    });
-
-    const result = schema.validate(data, { abortEarly: false });
-    return result.error ? result.error.details.reduce((acc, curr) => {
-      acc[curr.path[0]] = curr.message;
-      return acc;
-    }, {}) : null;
-  };
-
   const componentesCurricularesLookup = componentesCurriculares.reduce((lookup, componente) => {
-    lookup[componente.id] = componente.nome;
+    lookup[componente.id] = `${componente.id} - ${componente.nome}`;
     return lookup;
   }, {});
 
+  const validateData = data => {
+    const errors = {};
+
+    if (!data.periodoAvaliacao) {
+      errors.periodoAvaliacao = 'Período Avaliação é obrigatório';
+    }
+
+    if (!data.categoriaAvaliacao) {
+      errors.categoriaAvaliacao = 'Categoria Avaliação é obrigatório';
+    }
+
+    if (!data.conceitoProfessor || data.conceitoProfessor < 0 || data.conceitoProfessor > 10) {
+      errors.conceitoProfessor = 'Conceito do Professor deve estar entre 0 e 10';
+    }
+
+    if (!data.conceitoRecursoDidatico || data.conceitoRecursoDidatico < 0 || data.conceitoRecursoDidatico > 10) {
+      errors.conceitoRecursoDidatico = 'Conceito do Recurso Didático deve estar entre 0 e 10';
+    }
+
+    if (!data.conceitoRelevanciaDisciplina || data.conceitoRelevanciaDisciplina < 0 || data.conceitoRelevanciaDisciplina > 10) {
+      errors.conceitoRelevanciaDisciplina = 'Conceito da Relevância da Disciplina deve estar entre 0 e 10';
+    }
+
+    if (!data.alunos || !Array.isArray(data.alunos) || data.alunos.some(aluno => typeof aluno !== 'object')) {
+      console.log(data.alunos)
+      errors.alunos = 'Alunos deve ser uma lista de objetos';
+    }
+
+    return errors;
+  };
   return (
     <MaterialTable
       title="Gerenciamento de Avaliações"
@@ -128,12 +126,11 @@ const GerenciamentoAvaliacoes = props => {
         { title: 'Período Avaliação', field: 'periodoAvaliacao', lookup: periodoAvaliacao },
         {
           title: 'Componente Curricular',
-          field: 'componenteCurricular.nome',
-          lookup: componentesCurricularesLookup,
+          field: 'componenteCurricular',
           render: rowData => (
             <div className="dropdown">
               <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                {rowData.componenteCurricular.nome}
+                {`${rowData.componenteCurricular.id} - ${rowData.componenteCurricular.nome}`}
               </button>
               <ul className="dropdown-menu">
                 <li className="dropdown-item">Sigla: {rowData.componenteCurricular.sigla}</li>
@@ -141,11 +138,47 @@ const GerenciamentoAvaliacoes = props => {
                 <li className="dropdown-item">Carga Horária: {rowData.componenteCurricular.cargaHoraria}</li>
               </ul>
             </div>
-          )
+          ),
+          editComponent: props => {
+            const componenteCurricular = props.value || {};
+            return (
+              <div className="dropdown">
+                <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Componente Curricular
+                </button>
+                <ul className="dropdown-menu">
+                  <input
+                    className="dropdown-item"
+                    onChange={(e) => props.onChange({ ...componenteCurricular, nome: e.target.value })}
+                    placeholder="Nome"
+                    value={componenteCurricular.nome || ''}
+                  />
+                  <input
+                    className="dropdown-item"
+                    onChange={(e) => props.onChange({ ...componenteCurricular, sigla: e.target.value })}
+                    placeholder="Sigla"
+                    value={componenteCurricular.sigla || ''}
+                  />
+                  <input
+                    className="dropdown-item"
+                    onChange={(e) => props.onChange({ ...componenteCurricular, matrizCurricular: e.target.value })}
+                    placeholder="Matriz Curricular"
+                    value={componenteCurricular.matrizCurricular || ''}
+                  />
+                  <input
+                    className="dropdown-item"
+                    onChange={(e) => props.onChange({ ...componenteCurricular, cargaHoraria: e.target.value })}
+                    placeholder="Carga Horária"
+                    value={componenteCurricular.cargaHoraria || ''}
+                  />
+                </ul>
+              </div>
+            );
+          }
         },
-        { title: 'Categoria Avaliação', field: 'categoriaAvaliacao', type: "string" },
-        { title: 'Conceito do Professor', field: 'conceitoProfessor', type: 'numeric', },
-        { title: 'Conceito do Recurso Didático', field: 'conceitoRecursoDidatico', type: 'numeric', },
+        { title: 'Categoria Avaliação', field: 'categoriaAvaliacao', type: 'string' },
+        { title: 'Conceito do Professor', field: 'conceitoProfessor', type: 'numeric' },
+        { title: 'Conceito do Recurso Didático', field: 'conceitoRecursoDidatico', type: 'numeric' },
         { title: 'Conceito da Relevância da Disciplina', field: 'conceitoRelevanciaDisciplina', type: 'numeric' },
         {
           title: "Alunos",
@@ -157,10 +190,22 @@ const GerenciamentoAvaliacoes = props => {
               </button>
               <ul className="dropdown-menu">
                 {rowData.alunos && rowData.alunos.map((aluno, i) => (
-                  <li className="dropdown-item" key={i}>{aluno.nomeCompleto}</li>
+                  <li className="dropdown-item" key={i}>{`${i + 1} - ${aluno.nome}`}</li>
                 ))}
               </ul>
             </div>
+          ),
+          editComponent: rowData => (
+            <Select
+              isMulti
+              options={alunosData.map(aluno => ({ value: aluno, label: `${aluno.id}-${aluno.nome}` }))}
+              value={rowData.value || []}
+              getOptionLabel={option => option.label}
+              getOptionValue={option => option.value}
+              onChange={selectedData => {
+                rowData.onChange(selectedData)
+              }}
+            />
           )
         }
       ]}
@@ -170,46 +215,38 @@ const GerenciamentoAvaliacoes = props => {
           new Promise((resolve, reject) => {
             const errors = validateData(newData);
 
-            if (errors) {
-              alert(`Erro na validação: ${Object.values(errors).join(', ')}`);
+            if (Object.keys(errors).length > 0) {
+              alert(`Erro na validação: ${JSON.stringify(errors)}`);
               reject();
             } else {
-              setTimeout(() => {
-                handleCreate(newData);
-                const dataCreate = [...data];
-                dataCreate.push(newData);
-                setData(dataCreate);
-                resolve();
-              }, 1000);
+              handleCreate(newData);
+              const newId = Math.max(...data.map(aluno => aluno.id)) + 1;
+              const newIdComponente = Math.max(...componentesCurriculares.map(componente => componente.id)) + 1;
+              newData.componenteCurricular = { ...newData.componenteCurricular, id: newIdComponente }
+              setComponentesCurricularesData([...componentesCurriculares, newData.componenteCurricular])
+              setData([...data, { id: newId, ...newData }]);
+              console.log(data)
+              resolve();
             }
           }),
         onRowUpdate: (newData, oldData) =>
           new Promise((resolve, reject) => {
-            setTimeout(() => {
-              const errors = validateData(newData);
-
-              if (errors) {
-                alert(`Erro na validação: ${Object.values(errors).join(', ')}`);
-                reject();
-              } else {
-                const dataUpdate = [...data];
-                const index = oldData.tableData.id;
-                dataUpdate[index] = newData;
-                setData([...dataUpdate]);
-                resolve();
-              }
-            }, 1000);
+            const errors = validateData(newData);
+            const selectedValues = newData.alunos.map(data => data.value)
+            newData.alunos = selectedValues
+            console.log(newData.alunos)
+            if (Object.keys(errors).length > 0) {
+              alert(`Erro na validação: ${JSON.stringify(errors)}`);
+              reject();
+            } else {
+              handleUpdate(newData, oldData);
+              resolve();
+            }
           }),
         onRowDelete: oldData =>
           new Promise((resolve, reject) => {
-            setTimeout(() => {
-              handleDelete(oldData);
-              const dataDelete = [...data];
-              const index = oldData.tableData.id;
-              dataDelete.splice(index, 1);
-              setData([...dataDelete]);
-              resolve();
-            }, 1000);
+            handleDelete(oldData);
+            resolve();
           }),
       }}
     />

@@ -81,8 +81,67 @@ const GerenciamentoAlunos = props => {
           { title: 'nome', field: 'nome', searchable: true },
           { title: 'matricula', field: 'matricula', type: 'numeric', align: "center" },
           { title: 'cpf', field: 'cpf' },
-          { title: 'CEP', field: 'idEndereco' },
-          { title: 'curso', field: 'curso' }
+          {
+            title: 'Endereço',
+            field: 'endereco',
+            render: rowData => (
+
+              <div className="dropdown">
+                <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  {`${rowData.endereco.id} - ${rowData.endereco.nome}`}
+                </button>
+                <ul className="dropdown-menu">
+                  <li className="dropdown-item">Rua: {rowData.endereco.rua}</li>
+                  <li className="dropdown-item">Número: {rowData.endereco.numero}</li>
+                  <li className="dropdown-item">Cidade: {rowData.endereco.cidade}</li>
+                  <li className="dropdown-item">Estado: {rowData.endereco.estado}</li>
+                  <li className="dropdown-item">CEP: {rowData.endereco.cep}</li>
+                </ul>
+              </div>
+            ),
+            editComponent: props => {
+              const endereco = props.value || {};
+              return (
+                <div className="dropdown">
+                  <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Componente Curricular
+                  </button>
+                  <ul className="dropdown-menu">
+                    <input
+                      className="dropdown-item"
+                      onChange={(e) => props.onChange({ ...endereco, nome: e.target.value })}
+                      placeholder="Rua"
+                      value={endereco.rua || ''}
+                    />
+                    <input
+                      className="dropdown-item"
+                      onChange={(e) => props.onChange({ ...endereco, sigla: e.target.value })}
+                      placeholder="Número"
+                      value={endereco.numero || ''}
+                    />
+                    <input
+                      className="dropdown-item"
+                      onChange={(e) => props.onChange({ ...endereco, matrizCurricular: e.target.value })}
+                      placeholder="Cidade"
+                      value={endereco.cidade || ''}
+                    />
+                    <input
+                      className="dropdown-item"
+                      onChange={(e) => props.onChange({ ...endereco, cargaHoraria: e.target.value })}
+                      placeholder="Estado"
+                      value={endereco.estado || ''}
+                    />
+                    <input
+                      className="dropdown-item"
+                      onChange={(e) => props.onChange({ ...endereco, cargaHoraria: e.target.value })}
+                      placeholder="CEP"
+                      value={endereco.cep || ''}
+                    />
+                  </ul>
+                </div>
+              );
+            }
+          }, { title: 'curso', field: 'curso' }
         ]}
         options={{ sorting: true, searchAutoFocus: true, }}
         data={data}
