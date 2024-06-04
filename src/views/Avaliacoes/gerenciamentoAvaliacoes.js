@@ -20,7 +20,71 @@ const GerenciamentoAvaliacoes = () => {
       matrizCurricular: 'Engenharia',
       cargaHoraria: '0400'
     },
+    {
+      id: 2,
+      nome: 'Física Teórica',
+      sigla: 'FISTEO',
+      matrizCurricular: 'Ciências Exatas',
+      cargaHoraria: '0300'
+    },
+    {
+      id: 3,
+      nome: 'Química Orgânica',
+      sigla: 'QUIORG',
+      matrizCurricular: 'Ciências Naturais',
+      cargaHoraria: '0250'
+    },
+    {
+      id: 4,
+      nome: 'Introdução à Programação',
+      sigla: 'INTPROG',
+      matrizCurricular: 'Computação',
+      cargaHoraria: '0500'
+    },
+    {
+      id: 5,
+      nome: 'História da Arte',
+      sigla: 'HISART',
+      matrizCurricular: 'Artes',
+      cargaHoraria: '0200'
+    },
+    {
+      id: 6,
+      nome: 'Economia de Empresas',
+      sigla: 'ECONEMP',
+      matrizCurricular: 'Administração',
+      cargaHoraria: '0350'
+    },
+    {
+      id: 7,
+      nome: 'Direito Constitucional',
+      sigla: 'DIRCON',
+      matrizCurricular: 'Direito',
+      cargaHoraria: '0400'
+    },
+    {
+      id: 8,
+      nome: 'Microbiologia',
+      sigla: 'MICROBIO',
+      matrizCurricular: 'Biomedicina',
+      cargaHoraria: '0450'
+    },
+    {
+      id: 9,
+      nome: 'Psicologia Social',
+      sigla: 'PSICSOC',
+      matrizCurricular: 'Psicologia',
+      cargaHoraria: '0300'
+    },
+    {
+      id: 10,
+      nome: 'Gestão de Projetos',
+      sigla: 'GESPROJ',
+      matrizCurricular: 'Engenharia de Produção',
+      cargaHoraria: '0600'
+    }
   ];
+
   const fetchData = async () => {
     try {
       const [avaliacoesResponse, alunosResponse] = await Promise.all([
@@ -38,7 +102,15 @@ const GerenciamentoAvaliacoes = () => {
   const handleCreate = async newData => {
     try {
       const newId = Math.max(...data.map(aluno => aluno.id)) + 1;
-      const response = await axios.post(baseUrl + "/avaliacoes/create", { id: newId, ...newData });
+      const response = await axios.post(baseUrl + "/avaliacoes/create", {
+        "id": newId,
+        "periodoAvaliacao": newData.periodoAvaliacao,
+        "componenteCurricular": newData.componenteCurricular,
+        "categoriaAvaliacao": newData.categoriaAvaliacao,
+        "conceitoProfessor": newData.conceitoProfessor,
+        "conceitoRelevanciaDisciplina": newData.conceitoRelevanciaDisciplina,
+        "alunos": newData.alunos
+      });
       return response
     } catch (error) {
       console.error('Erro ao salvar:', error);
@@ -51,7 +123,7 @@ const GerenciamentoAvaliacoes = () => {
       // await axios.put(baseUrl+`/avaliacao/update/${oldData.id}`, newData);
       //Apenas o acesso a rota
       const response = await axios.put(baseUrl + `/avaliacoes/update`, newData);
-      console.log(response ? newData : null)
+
       return response ? newData : null
     } catch (error) {
       console.error('Erro ao atualizar:', error);
@@ -62,8 +134,7 @@ const GerenciamentoAvaliacoes = () => {
     try {
       const response = await axios.delete(`http://demo4138820.mockable.io/avaliacoes/delete`);
       setData(prevData => prevData.filter(data => data.id !== oldData.id));
-      console.log(response.data)
-      return response
+      return response.data
     } catch (error) {
       console.error('Erro ao deletar:', error);
     }
@@ -82,11 +153,6 @@ const GerenciamentoAvaliacoes = () => {
     2019.2: '2019.2',
     2019.1: '2019.1'
   };
-
-  const componentesCurricularesLookup = componentesCurriculares.reduce((lookup, componente) => {
-    lookup[componente.id] = `${componente.id} - ${componente.nome}`;
-    return lookup;
-  }, {});
 
   const validateData = data => {
     const errors = {};
@@ -118,6 +184,10 @@ const GerenciamentoAvaliacoes = () => {
 
     return errors;
   };
+  const componentesCurricularesLookup = componentesCurriculares.reduce((lookup, componente) => {
+    lookup[componente.id] = componente.nome;
+    return lookup;
+  }, {});
   return (
     <MaterialTable
       title="Gerenciamento de Avaliações"
@@ -139,43 +209,26 @@ const GerenciamentoAvaliacoes = () => {
               </ul>
             </div>
           ),
-          editComponent: props => {
-            const componenteCurricular = props.value || {};
-            return (
-              <div className="dropdown">
-                <button className="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Componente Curricular
-                </button>
-                <ul className="dropdown-menu">
-                  <input
-                    className="dropdown-item"
-                    onChange={(e) => props.onChange({ ...componenteCurricular, nome: e.target.value })}
-                    placeholder="Nome"
-                    value={componenteCurricular.nome || ''}
-                  />
-                  <input
-                    className="dropdown-item"
-                    onChange={(e) => props.onChange({ ...componenteCurricular, sigla: e.target.value })}
-                    placeholder="Sigla"
-                    value={componenteCurricular.sigla || ''}
-                  />
-                  <input
-                    className="dropdown-item"
-                    onChange={(e) => props.onChange({ ...componenteCurricular, matrizCurricular: e.target.value })}
-                    placeholder="Matriz Curricular"
-                    value={componenteCurricular.matrizCurricular || ''}
-                  />
-                  <input
-                    className="dropdown-item"
-                    onChange={(e) => props.onChange({ ...componenteCurricular, cargaHoraria: e.target.value })}
-                    placeholder="Carga Horária"
-                    value={componenteCurricular.cargaHoraria || ''}
-                  />
-                </ul>
-              </div>
-            );
-          }
-        },
+          editComponent: props => (
+            <select
+              className="form-select"
+              value={props.value ? props.value.id : ''}
+              onChange={e => {
+                const selectedId = e.target.value;
+                const selectedComponente = componentesCurriculares.find(c => c.id == selectedId);
+                props.onChange(selectedComponente);
+              }}
+            >
+              <option value="" disabled>Selecione um Componente Curricular</option>
+              {componentesCurriculares.map(componente => (
+                <option key={componente.id} value={componente.id}>
+                  {`${componente.id} - ${componente.nome}`}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        ,
         { title: 'Categoria Avaliação', field: 'categoriaAvaliacao', type: 'string' },
         { title: 'Conceito do Professor', field: 'conceitoProfessor', type: 'numeric' },
         { title: 'Conceito do Recurso Didático', field: 'conceitoRecursoDidatico', type: 'numeric' },
@@ -220,12 +273,15 @@ const GerenciamentoAvaliacoes = () => {
               reject();
             } else {
               handleCreate(newData);
+
               const newId = Math.max(...data.map(aluno => aluno.id)) + 1;
               const newIdComponente = Math.max(...componentesCurriculares.map(componente => componente.id)) + 1;
               newData.componenteCurricular = { ...newData.componenteCurricular, id: newIdComponente }
+
               setComponentesCurricularesData([...componentesCurriculares, newData.componenteCurricular])
               setData([...data, { id: newId, ...newData }]);
-              console.log(data)
+
+              console.log("Criado com sucesso")
               resolve();
             }
           }),
@@ -240,12 +296,14 @@ const GerenciamentoAvaliacoes = () => {
               reject();
             } else {
               handleUpdate(newData, oldData);
+              console.log("Alterado com sucesso")
               resolve();
             }
           }),
         onRowDelete: oldData =>
           new Promise((resolve, reject) => {
             handleDelete(oldData);
+            console.log("Deletado com sucesso")
             resolve();
           }),
       }}

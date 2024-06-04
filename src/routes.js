@@ -60,7 +60,7 @@ const dashboardRoutes = [
   },
   {
     path: "/avaliacoes",
-    name: "Gerenciamento de Avaliacoes",
+    name: "Gerenciamento de Avaliações",
     rtlName: "Avaliacoes",
     icon: Person,
     component: GerenciamentoAvaliacoes,
